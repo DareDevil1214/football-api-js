@@ -7,10 +7,15 @@ const swaggerUi = require("swagger-ui-express");
 const path = require("path");
 const swaggerDocument = require("../swagger.json");
 
-
-
 const app = express();
 const router = express.Router();
+
+// Enable CORS for all routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 
 const news_array_ninenine = [];
 const news_array_onefootball = [];
