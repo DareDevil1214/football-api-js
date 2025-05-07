@@ -5,7 +5,310 @@ const axios = require("axios");
 const serverless = require("serverless-http");
 const swaggerUi = require("swagger-ui-express");
 const path = require("path");
-const swaggerDocument = require("../swagger.json");
+// Import swagger document directly instead of requiring it from a file
+const swaggerDocument = {
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Football News API",
+    "description": "API for fetching football news from various sources",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API base path"
+    }
+  ],
+  "paths": {
+    "/news": {
+      "get": {
+        "summary": "Get list of news sources",
+        "description": "Returns a list of all available news sources",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NewsSource"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/90mins": {
+      "get": {
+        "summary": "Get news from 90mins",
+        "description": "Returns football news articles from 90mins",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NinetyMinsArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/onefootball": {
+      "get": {
+        "summary": "Get news from One Football",
+        "description": "Returns football news articles from One Football",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OneFootballArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/espn": {
+      "get": {
+        "summary": "Get news from ESPN",
+        "description": "Returns football news articles from ESPN",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ESPNArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/goal": {
+      "get": {
+        "summary": "Get news from GOAL",
+        "description": "Returns football news articles from GOAL",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GoalArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/fourfourtwo/epl": {
+      "get": {
+        "summary": "Get EPL news from FourFourTwo",
+        "description": "Returns Premier League news articles from FourFourTwo",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FourFourTwoArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/fourfourtwo/laliga": {
+      "get": {
+        "summary": "Get La Liga news from FourFourTwo",
+        "description": "Returns La Liga news articles from FourFourTwo",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FourFourTwoArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/fourfourtwo/ucl": {
+      "get": {
+        "summary": "Get Champions League news from FourFourTwo",
+        "description": "Returns Champions League news articles from FourFourTwo",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FourFourTwoArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/fourfourtwo/bundesliga": {
+      "get": {
+        "summary": "Get Bundesliga news from FourFourTwo",
+        "description": "Returns Bundesliga news articles from FourFourTwo",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FourFourTwoArticle"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NewsSource": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "90mins"
+          }
+        }
+      },
+      "NinetyMinsArticle": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Manchester United considering move for star striker"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://www.90min.com/manchester-united-transfer-news"
+          }
+        }
+      },
+      "OneFootballArticle": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Liverpool win dramatic match against Arsenal"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://onefootball.com/en/news/liverpool-win-dramatic-match-against-arsenal"
+          },
+          "img": {
+            "type": "string",
+            "example": "https://image.onefootball.com/liverpool-match.jpg"
+          }
+        }
+      },
+      "ESPNArticle": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Real Madrid secure Champions League victory"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://www.espn.in/football/story/real-madrid-champions-league"
+          },
+          "img": {
+            "type": "string",
+            "example": "https://a.espncdn.com/photo/real-madrid-champions.jpg"
+          }
+        }
+      },
+      "GoalArticle": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://goal.com/lists/top-10-players-2023"
+          },
+          "modifiedTitle3": {
+            "type": "string",
+            "example": "Top 10 players of 2023"
+          },
+          "news_img": {
+            "type": "string",
+            "example": "https://images.goal.com/top-10-players.jpg"
+          }
+        }
+      },
+      "FourFourTwoArticle": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://www.fourfourtwo.com/premier-league/manchester-city-win-title"
+          },
+          "title": {
+            "type": "string",
+            "example": "Manchester City win Premier League title"
+          },
+          "news_img": {
+            "type": "string",
+            "example": "https://cdn.fourfourtwo.com/man-city-title.jpg"
+          },
+          "short_desc": {
+            "type": "string",
+            "example": "Manchester City have won their fourth consecutive Premier League title."
+          }
+        }
+      }
+    }
+  }
+};
 
 const app = express();
 const router = express.Router();
@@ -16,6 +319,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
 });
+
 
 const news_array_ninenine = [];
 const news_array_onefootball = [];
@@ -288,7 +592,9 @@ router.get("/news/fourfourtwo/bundesliga", (req, res) => {
 
 // Add Swagger documentation
 router.use("/docs", swaggerUi.serve);
-router.get("/docs", swaggerUi.setup(swaggerDocument));
+router.get("/docs", swaggerUi.setup(swaggerDocument, {
+  explorer: true
+}));
 
 app.use("/api", router);
 
