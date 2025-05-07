@@ -5,7 +5,9 @@ const axios = require("axios");
 const serverless = require("serverless-http");
 const swaggerUi = require("swagger-ui-express");
 const path = require("path");
-const swaggerDocument = require(path.join(__dirname, "..", "swagger.json"));
+const swaggerDocument = require("../swagger.json");
+
+
 
 const app = express();
 const router = express.Router();
