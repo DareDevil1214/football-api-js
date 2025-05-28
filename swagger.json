@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Football News API",
-    "description": "API for fetching football news from various sources",
-    "version": "1.0.0"
+    "description": "API for fetching football news from various sources with MongoDB scraping capabilities",
+    "version": "2.0.0"
   },
   "servers": [
     {
@@ -16,6 +16,7 @@
       "get": {
         "summary": "Get list of news sources",
         "description": "Returns a list of all available news sources",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -37,6 +38,7 @@
       "get": {
         "summary": "Get news from 90mins",
         "description": "Returns football news articles from 90mins",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -58,6 +60,7 @@
       "get": {
         "summary": "Get news from One Football",
         "description": "Returns football news articles from One Football",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -79,6 +82,7 @@
       "get": {
         "summary": "Get news from ESPN",
         "description": "Returns football news articles from ESPN",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -100,6 +104,7 @@
       "get": {
         "summary": "Get news from GOAL",
         "description": "Returns football news articles from GOAL",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -121,6 +126,7 @@
       "get": {
         "summary": "Get EPL news from FourFourTwo",
         "description": "Returns Premier League news articles from FourFourTwo",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -142,6 +148,7 @@
       "get": {
         "summary": "Get La Liga news from FourFourTwo",
         "description": "Returns La Liga news articles from FourFourTwo",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -163,6 +170,7 @@
       "get": {
         "summary": "Get Champions League news from FourFourTwo",
         "description": "Returns Champions League news articles from FourFourTwo",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -184,6 +192,7 @@
       "get": {
         "summary": "Get Bundesliga news from FourFourTwo",
         "description": "Returns Bundesliga news articles from FourFourTwo",
+        "tags": ["📰 Basic News Endpoints (Original)"],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -197,6 +206,165 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/scrape/{source}": {
+      "post": {
+        "summary": "🚀 Scrape full article content and save to MongoDB",
+        "description": "Scrapes full content from articles and saves to database. **Important:** Call the basic /news/{source} endpoint first to populate articles, then use this endpoint to scrape full content.",
+        "tags": ["🔧 Enhanced Scraping Endpoints (New)"],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": { 
+              "type": "string",
+              "enum": ["90mins", "onefootball", "espn", "goal", "fourfourtwo-epl", "fourfourtwo-laliga", "fourfourtwo-ucl", "fourfourtwo-bundesliga"]
+            },
+            "description": "News source to scrape from"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "number",
+                    "default": 5,
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "Number of articles to scrape (max 10 recommended)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scraping completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScrapingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid source parameter"
+          },
+          "500": {
+            "description": "Scraping failed"
+          }
+        }
+      }
+    },
+    "/articles": {
+      "get": {
+        "summary": "📚 Get stored articles from MongoDB",
+        "description": "Retrieve articles that have been scraped and stored in the database with pagination and filtering options",
+        "tags": ["🔧 Enhanced Scraping Endpoints (New)"],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "schema": { 
+              "type": "string",
+              "enum": ["90mins", "onefootball", "espn", "goal", "fourfourtwo-epl", "fourfourtwo-laliga", "fourfourtwo-ucl", "fourfourtwo-bundesliga"]
+            },
+            "description": "Filter by news source"
+          },
+          {
+            "name": "category", 
+            "in": "query",
+            "schema": { 
+              "type": "string",
+              "enum": ["epl", "laliga", "ucl", "bundesliga", "general"]
+            },
+            "description": "Filter by category"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "number", "default": 20, "minimum": 1, "maximum": 100 },
+            "description": "Number of articles per page"
+          },
+          {
+            "name": "page",
+            "in": "query", 
+            "schema": { "type": "number", "default": 1, "minimum": 1 },
+            "description": "Page number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Articles retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticlesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/articles/{id}": {
+      "get": {
+        "summary": "📄 Get single article with full content",
+        "description": "Retrieve a specific article by ID with complete content including full article text",
+        "tags": ["🔧 Enhanced Scraping Endpoints (New)"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Article ID from MongoDB"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Article found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FullArticle"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Article not found"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "❤️ Health check endpoint",
+        "description": "Returns API and database health status with statistics about scraped articles",
+        "tags": ["🔧 Enhanced Scraping Endpoints (New)"],
+        "responses": {
+          "200": {
+            "description": "System is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "System has issues"
           }
         }
       }
@@ -295,6 +463,140 @@
           "short_desc": {
             "type": "string",
             "example": "Manchester City have won their fourth consecutive Premier League title."
+          }
+        }
+      },
+      "ScrapingResponse": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "example": "90mins"
+          },
+          "totalFound": {
+            "type": "number",
+            "example": 10
+          },
+          "scraped": {
+            "type": "number",
+            "example": 5
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FullArticle"
+            }
+          }
+        }
+      },
+      "ArticlesResponse": {
+        "type": "object",
+        "properties": {
+          "articles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoredArticle"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {"type": "number", "example": 1},
+              "limit": {"type": "number", "example": 20},
+              "total": {"type": "number", "example": 45},
+              "totalPages": {"type": "number", "example": 3}
+            }
+          }
+        }
+      },
+      "StoredArticle": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "64f7a1b2c3d4e5f6789abcde"
+          },
+          "source": {
+            "type": "string",
+            "example": "90mins"
+          },
+          "title": {
+            "type": "string",
+            "example": "Manchester United considering move for star striker"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://www.90min.com/manchester-united-transfer"
+          },
+          "image": {
+            "type": "string",
+            "example": "https://cdn.90min.com/image.jpg"
+          },
+          "description": {
+            "type": "string",
+            "example": "Manchester United are reportedly considering..."
+          },
+          "category": {
+            "type": "string",
+            "example": "general"
+          },
+          "scrapedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00.000Z"
+          },
+          "wordCount": {
+            "type": "number",
+            "example": 342
+          },
+          "readingTime": {
+            "type": "number",
+            "example": 2
+          }
+        }
+      },
+      "FullArticle": {
+        "allOf": [
+          {"$ref": "#/components/schemas/StoredArticle"},
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "example": "Full article content goes here..."
+              },
+              "publishedAt": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2024-01-15T08:00:00.000Z"
+              }
+            }
+          }
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "OK"
+          },
+          "database": {
+            "type": "string",
+            "example": "connected"
+          },
+          "totalArticles": {
+            "type": "number",
+            "example": 150
+          },
+          "articlesLast24h": {
+            "type": "number",
+            "example": 25
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T12:00:00.000Z"
           }
         }
       }

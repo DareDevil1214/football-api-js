@@ -1,3 +1,4 @@
+// api/api.js - MINIMAL CHANGES to your existing file
 const express = require("express");
 const PORT = 8000 || process.env.PORT;
 const cheerio = require("cheerio");
@@ -5,313 +6,22 @@ const axios = require("axios");
 const serverless = require("serverless-http");
 const swaggerUi = require("swagger-ui-express");
 const path = require("path");
-// Import swagger document directly instead of requiring it from a file
-const swaggerDocument = {
-  "openapi": "3.0.0",
-  "info": {
-    "title": "Football News API",
-    "description": "API for fetching football news from various sources",
-    "version": "1.0.0"
-  },
-  "servers": [
-    {
-      "url": "/api",
-      "description": "API base path"
-    }
-  ],
-  "paths": {
-    "/news": {
-      "get": {
-        "summary": "Get list of news sources",
-        "description": "Returns a list of all available news sources",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NewsSource"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/90mins": {
-      "get": {
-        "summary": "Get news from 90mins",
-        "description": "Returns football news articles from 90mins",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NinetyMinsArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/onefootball": {
-      "get": {
-        "summary": "Get news from One Football",
-        "description": "Returns football news articles from One Football",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OneFootballArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/espn": {
-      "get": {
-        "summary": "Get news from ESPN",
-        "description": "Returns football news articles from ESPN",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ESPNArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/goal": {
-      "get": {
-        "summary": "Get news from GOAL",
-        "description": "Returns football news articles from GOAL",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GoalArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/fourfourtwo/epl": {
-      "get": {
-        "summary": "Get EPL news from FourFourTwo",
-        "description": "Returns Premier League news articles from FourFourTwo",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FourFourTwoArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/fourfourtwo/laliga": {
-      "get": {
-        "summary": "Get La Liga news from FourFourTwo",
-        "description": "Returns La Liga news articles from FourFourTwo",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FourFourTwoArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/fourfourtwo/ucl": {
-      "get": {
-        "summary": "Get Champions League news from FourFourTwo",
-        "description": "Returns Champions League news articles from FourFourTwo",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FourFourTwoArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/news/fourfourtwo/bundesliga": {
-      "get": {
-        "summary": "Get Bundesliga news from FourFourTwo",
-        "description": "Returns Bundesliga news articles from FourFourTwo",
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FourFourTwoArticle"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "NewsSource": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "example": "90mins"
-          }
-        }
-      },
-      "NinetyMinsArticle": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "example": "Manchester United considering move for star striker"
-          },
-          "url": {
-            "type": "string",
-            "example": "https://www.90min.com/manchester-united-transfer-news"
-          }
-        }
-      },
-      "OneFootballArticle": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "example": "Liverpool win dramatic match against Arsenal"
-          },
-          "url": {
-            "type": "string",
-            "example": "https://onefootball.com/en/news/liverpool-win-dramatic-match-against-arsenal"
-          },
-          "img": {
-            "type": "string",
-            "example": "https://image.onefootball.com/liverpool-match.jpg"
-          }
-        }
-      },
-      "ESPNArticle": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "example": "Real Madrid secure Champions League victory"
-          },
-          "url": {
-            "type": "string",
-            "example": "https://www.espn.in/football/story/real-madrid-champions-league"
-          },
-          "img": {
-            "type": "string",
-            "example": "https://a.espncdn.com/photo/real-madrid-champions.jpg"
-          }
-        }
-      },
-      "GoalArticle": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "example": "https://goal.com/lists/top-10-players-2023"
-          },
-          "modifiedTitle3": {
-            "type": "string",
-            "example": "Top 10 players of 2023"
-          },
-          "news_img": {
-            "type": "string",
-            "example": "https://images.goal.com/top-10-players.jpg"
-          }
-        }
-      },
-      "FourFourTwoArticle": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "example": "https://www.fourfourtwo.com/premier-league/manchester-city-win-title"
-          },
-          "title": {
-            "type": "string",
-            "example": "Manchester City win Premier League title"
-          },
-          "news_img": {
-            "type": "string",
-            "example": "https://cdn.fourfourtwo.com/man-city-title.jpg"
-          },
-          "short_desc": {
-            "type": "string",
-            "example": "Manchester City have won their fourth consecutive Premier League title."
-          }
-        }
-      }
-    }
-  }
-};
+
+// ADD THESE 2 LINES - Import new modules
+const { connectDB, Article } = require('./database');
+const { scrapeArticleContent } = require('./scraper');
+
+// ADD THIS LINE - Connect to MongoDB
+connectDB();
+
+// KEEP YOUR EXISTING SWAGGER IMPORT - Use your original swagger.json
+const swaggerDocument = require('../swagger.json'); // Use your updated swagger.json
 
 const app = express();
 const router = express.Router();
+
+// ADD THIS LINE - Enable JSON body parsing for POST requests
+app.use(express.json());
 
 // Enable CORS for all routes
 app.use((req, res, next) => {
@@ -320,7 +30,7 @@ app.use((req, res, next) => {
   next();
 });
 
-
+// KEEP ALL YOUR EXISTING ARRAYS AND VARIABLES EXACTLY AS THEY ARE
 const news_array_ninenine = [];
 const news_array_onefootball = [];
 const news_array_espn = [];
@@ -338,11 +48,15 @@ const news_websites = [
   { title: "FourFourtwo" },
 ];
 
+// KEEP ALL YOUR EXISTING ENDPOINTS EXACTLY AS THEY ARE
 router.get("/news", (req, res) => {
   res.json(news_websites);
 });
 
 router.get("/news/90mins", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_ninenine.length = 0;
+  
   axios
     .get("https://www.90min.com/categories/football-news")
     .then((response) => {
@@ -375,6 +89,9 @@ router.get("/news/90mins", (req, res) => {
 });
 
 router.get("/news/onefootball", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_onefootball.length = 0;
+  
   axios
     .get("https://onefootball.com/en/home")
     .then((response) => {
@@ -400,6 +117,9 @@ router.get("/news/onefootball", (req, res) => {
 });
 
 router.get("/news/espn", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_espn.length = 0;
+  
   axios
     .get("https://www.espn.in/football/")
     .then((response) => {
@@ -425,6 +145,9 @@ router.get("/news/espn", (req, res) => {
 });
 
 router.get("/news/goal", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_goaldotcom.length = 0;
+  
   axios
     .get("https://www.goal.com/en-in/news")
     .then((response) => {
@@ -462,6 +185,9 @@ router.get("/news/goal", (req, res) => {
 });
 
 router.get("/news/fourfourtwo/epl", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_fourfourtwo_epl.length = 0;
+  
   axios
     .get("https://www.fourfourtwo.com/premier-league")
     .then((response) => {
@@ -492,6 +218,9 @@ router.get("/news/fourfourtwo/epl", (req, res) => {
 });
 
 router.get("/news/fourfourtwo/laliga", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_fourfourtwo_laliga.length = 0;
+  
   axios
     .get("https://www.fourfourtwo.com/la-liga")
     .then((response) => {
@@ -523,6 +252,9 @@ router.get("/news/fourfourtwo/laliga", (req, res) => {
 });
 
 router.get("/news/fourfourtwo/ucl", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_fourfourtwo_ucl.length = 0;
+  
   axios
     .get("https://www.fourfourtwo.com/champions-league")
     .then((response) => {
@@ -557,6 +289,9 @@ router.get("/news/fourfourtwo/ucl", (req, res) => {
 });
 
 router.get("/news/fourfourtwo/bundesliga", (req, res) => {
+  // Clear array to avoid duplicates
+  news_array_fourfourtwo_bundesliga.length = 0;
+  
   axios
     .get("https://www.fourfourtwo.com/bundesliga")
     .then((response) => {
@@ -590,7 +325,184 @@ router.get("/news/fourfourtwo/bundesliga", (req, res) => {
     .catch((err) => console.log(err));
 });
 
-// Add Swagger documentation
+// ADD THESE NEW ENDPOINTS AFTER YOUR EXISTING ONES
+
+// NEW: Scraping endpoint
+router.post("/scrape/:source", async (req, res) => {
+  const { source } = req.params;
+  const { limit = 5 } = req.body;
+  
+  try {
+    let articles = [];
+    
+    // Get articles from your existing arrays
+    switch (source) {
+      case '90mins':
+        articles = news_array_ninenine.slice(0, limit);
+        break;
+      case 'onefootball':
+        articles = news_array_onefootball.slice(0, limit);
+        break;
+      case 'espn':
+        articles = news_array_espn.slice(0, limit);
+        break;
+      case 'goal':
+        articles = news_array_goaldotcom.slice(0, limit);
+        break;
+      case 'fourfourtwo-epl':
+        articles = news_array_fourfourtwo_epl.slice(0, limit);
+        break;
+      case 'fourfourtwo-laliga':
+        articles = news_array_fourfourtwo_laliga.slice(0, limit);
+        break;
+      case 'fourfourtwo-ucl':
+        articles = news_array_fourfourtwo_ucl.slice(0, limit);
+        break;
+      case 'fourfourtwo-bundesliga':
+        articles = news_array_fourfourtwo_bundesliga.slice(0, limit);
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid source' });
+    }
+    
+    if (articles.length === 0) {
+      return res.json({ 
+        message: 'No articles found. Try calling the basic endpoint first to populate articles.',
+        hint: `Call GET /api/news/${source} first, then try scraping again.`,
+        source,
+        scraped: 0 
+      });
+    }
+    
+    const scrapedArticles = [];
+    
+    // Process articles one by one to avoid overwhelming servers
+    for (const article of articles) {
+      try {
+        // Check if already exists in database
+        const existingArticle = await Article.findOne({ url: article.url });
+        if (existingArticle) {
+          scrapedArticles.push(existingArticle);
+          continue;
+        }
+        
+        // Scrape full content
+        console.log(`Scraping: ${article.url}`);
+        const scrapedContent = await scrapeArticleContent(article.url, source);
+        
+        if (scrapedContent) {
+          // Save to MongoDB
+          const newArticle = new Article({
+            source: source,
+            title: scrapedContent.title || article.title,
+            url: article.url,
+            image: scrapedContent.image || article.img || article.news_img,
+            description: scrapedContent.description,
+            content: scrapedContent.content,
+            originalTitle: article.title || article.modifiedTitle3,
+            publishedAt: scrapedContent.publishedAt,
+            category: source.includes('epl') ? 'epl' : 
+                     source.includes('laliga') ? 'laliga' :
+                     source.includes('ucl') ? 'ucl' :
+                     source.includes('bundesliga') ? 'bundesliga' : 'general'
+          });
+          
+          await newArticle.save();
+          scrapedArticles.push(newArticle);
+          console.log(`✅ Saved: ${newArticle.title.substring(0, 50)}...`);
+        }
+        
+        // Add delay between requests to be respectful
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+      } catch (error) {
+        console.error(`❌ Error processing ${article.url}:`, error.message);
+      }
+    }
+    
+    res.json({
+      source,
+      totalFound: articles.length,
+      scraped: scrapedArticles.length,
+      articles: scrapedArticles
+    });
+    
+  } catch (error) {
+    console.error('Scraping error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// NEW: Get stored articles from MongoDB
+router.get("/articles", async (req, res) => {
+  try {
+    const { source, category, limit = 20, page = 1 } = req.query;
+    const query = {};
+    
+    if (source) query.source = source;
+    if (category) query.category = category;
+    
+    const articles = await Article.find(query)
+      .sort({ scrapedAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .select('-content'); // Exclude full content for list view
+      
+    const total = await Article.countDocuments(query);
+    
+    res.json({
+      articles,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// NEW: Get single article with full content
+router.get("/articles/:id", async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id);
+    if (!article) {
+      return res.status(404).json({ error: 'Article not found' });
+    }
+    res.json(article);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// NEW: Health check endpoint
+router.get("/health", async (req, res) => {
+  try {
+    const totalArticles = await Article.countDocuments();
+    const recentArticles = await Article.countDocuments({
+      scrapedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+    });
+    
+    res.json({
+      status: 'OK',
+      database: 'connected',
+      totalArticles,
+      articlesLast24h: recentArticles,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'Error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// KEEP YOUR EXISTING SWAGGER SETUP - Use your updated swagger.json file
 router.use("/docs", swaggerUi.serve);
 router.get("/docs", swaggerUi.setup(swaggerDocument, {
   explorer: true
