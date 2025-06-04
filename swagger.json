@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Football News API",
-    "description": "API for fetching football news from various sources with MongoDB scraping capabilities",
+    "description": "API for fetching football news from various sources with MySQL database scraping capabilities",
     "version": "2.0.0"
   },
   "servers": [
@@ -52,6 +52,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch 90mins news"
           }
         }
       }
@@ -74,6 +77,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch OneFootball news"
           }
         }
       }
@@ -96,6 +102,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch ESPN news"
           }
         }
       }
@@ -118,6 +127,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch Goal.com news"
           }
         }
       }
@@ -140,6 +152,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch FourFourTwo EPL news"
           }
         }
       }
@@ -162,6 +177,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch FourFourTwo La Liga news"
           }
         }
       }
@@ -184,6 +202,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch FourFourTwo UCL news"
           }
         }
       }
@@ -206,14 +227,17 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Failed to fetch FourFourTwo Bundesliga news"
           }
         }
       }
     },
     "/scrape/{source}": {
       "post": {
-        "summary": "🚀 Scrape full article content and save to MongoDB",
-        "description": "Scrapes full content from articles and saves to database. **Important:** Call the basic /news/{source} endpoint first to populate articles, then use this endpoint to scrape full content.",
+        "summary": "🚀 Scrape full article content and save to MySQL",
+        "description": "Scrapes full content from articles and saves to MySQL database. **Important:** Call the basic /news/{source} endpoint first to populate articles, then use this endpoint to scrape full content.",
         "tags": ["🔧 Enhanced Scraping Endpoints (New)"],
         "parameters": [
           {
@@ -267,8 +291,8 @@
     },
     "/articles": {
       "get": {
-        "summary": "📚 Get stored articles from MongoDB",
-        "description": "Retrieve articles that have been scraped and stored in the database with pagination and filtering options",
+        "summary": "📚 Get stored articles from MySQL database",
+        "description": "Retrieve articles that have been scraped and stored in the MySQL database with pagination and filtering options",
         "tags": ["🔧 Enhanced Scraping Endpoints (New)"],
         "parameters": [
           {
@@ -312,6 +336,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Database error"
           }
         }
       }
@@ -326,8 +353,8 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" },
-            "description": "Article ID from MongoDB"
+            "schema": { "type": "integer" },
+            "description": "Article ID from MySQL database"
           }
         ],
         "responses": {
@@ -343,6 +370,9 @@
           },
           "404": {
             "description": "Article not found"
+          },
+          "500": {
+            "description": "Database error"
           }
         }
       }
@@ -350,7 +380,7 @@
     "/health": {
       "get": {
         "summary": "❤️ Health check endpoint",
-        "description": "Returns API and database health status with statistics about scraped articles",
+        "description": "Returns API and MySQL database health status with statistics about scraped articles",
         "tags": ["🔧 Enhanced Scraping Endpoints (New)"],
         "responses": {
           "200": {
@@ -512,9 +542,10 @@
       "StoredArticle": {
         "type": "object",
         "properties": {
-          "_id": {
-            "type": "string",
-            "example": "64f7a1b2c3d4e5f6789abcde"
+          "id": {
+            "type": "integer",
+            "example": 1,
+            "description": "MySQL auto-increment ID"
           },
           "source": {
             "type": "string",
@@ -523,6 +554,10 @@
           "title": {
             "type": "string",
             "example": "Manchester United considering move for star striker"
+          },
+          "original_title": {
+            "type": "string",
+            "example": "Man Utd eye striker move"
           },
           "url": {
             "type": "string",
@@ -540,18 +575,18 @@
             "type": "string",
             "example": "general"
           },
-          "scrapedAt": {
+          "scraped_at": {
             "type": "string",
             "format": "date-time",
             "example": "2024-01-15T10:30:00.000Z"
           },
-          "wordCount": {
+          "word_count": {
             "type": "number",
             "example": 342
           },
-          "readingTime": {
-            "type": "number",
-            "example": 2
+          "is_active": {
+            "type": "boolean",
+            "example": true
           }
         }
       },
@@ -565,7 +600,7 @@
                 "type": "string",
                 "example": "Full article content goes here..."
               },
-              "publishedAt": {
+              "published_at": {
                 "type": "string",
                 "format": "date-time",
                 "example": "2024-01-15T08:00:00.000Z"
@@ -583,7 +618,7 @@
           },
           "database": {
             "type": "string",
-            "example": "connected"
+            "example": "MySQL connected"
           },
           "totalArticles": {
             "type": "number",

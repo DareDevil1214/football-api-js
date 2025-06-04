@@ -1,36 +1,154 @@
-// api/api.js - MINIMAL CHANGES to your existing file
+// api/api.js - Corrected for MySQL with proper Swagger handling
 const express = require("express");
-const PORT = 8000 || process.env.PORT;
 const cheerio = require("cheerio");
 const axios = require("axios");
 const serverless = require("serverless-http");
 const swaggerUi = require("swagger-ui-express");
-const path = require("path");
 
-// ADD THESE 2 LINES - Import new modules
+// Import MySQL modules (NOT MongoDB)
 const { connectDB, Article } = require('./database');
 const { scrapeArticleContent } = require('./scraper');
 
-// ADD THIS LINE - Connect to MongoDB
+// Connect to MySQL
 connectDB();
 
-// KEEP YOUR EXISTING SWAGGER IMPORT - Use your original swagger.json
-const swaggerDocument = require('../swagger.json'); // Use your updated swagger.json
+// Load swagger documentation - make this optional in case file doesn't exist
+let swaggerDocument = {};
+try {
+  swaggerDocument = require('../swagger.json');
+} catch (error) {
+  console.log('⚠️  swagger.json not found, creating basic API docs');
+  swaggerDocument = {
+    openapi: "3.0.0",
+    info: {
+      title: "Football TV News API",
+      version: "1.0.0",
+      description: "Football news scraping and storage API with MySQL database"
+    },
+    servers: [
+      {
+        url: "/api",
+        description: "API Server"
+      }
+    ],
+    paths: {
+      "/news": {
+        get: {
+          summary: "Get list of news sources",
+          responses: {
+            "200": {
+              description: "List of available news sources"
+            }
+          }
+        }
+      },
+      "/news/90mins": {
+        get: {
+          summary: "Get news from 90mins",
+          responses: {
+            "200": {
+              description: "Array of news articles from 90mins"
+            }
+          }
+        }
+      },
+      "/scrape/{source}": {
+        post: {
+          summary: "Scrape and store articles from a source",
+          parameters: [
+            {
+              name: "source",
+              in: "path",
+              required: true,
+              schema: {
+                type: "string",
+                enum: ["90mins", "onefootball", "espn", "goal", "fourfourtwo-epl", "fourfourtwo-laliga", "fourfourtwo-ucl", "fourfourtwo-bundesliga"]
+              }
+            }
+          ],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    limit: {
+                      type: "integer",
+                      default: 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            "200": {
+              description: "Scraping results"
+            }
+          }
+        }
+      },
+      "/articles": {
+        get: {
+          summary: "Get stored articles from database",
+          parameters: [
+            {
+              name: "source",
+              in: "query",
+              schema: { type: "string" }
+            },
+            {
+              name: "category",
+              in: "query",
+              schema: { type: "string" }
+            },
+            {
+              name: "limit",
+              in: "query",
+              schema: { type: "integer", default: 20 }
+            },
+            {
+              name: "page",
+              in: "query",
+              schema: { type: "integer", default: 1 }
+            }
+          ],
+          responses: {
+            "200": {
+              description: "Paginated list of articles"
+            }
+          }
+        }
+      },
+      "/health": {
+        get: {
+          summary: "Health check endpoint",
+          responses: {
+            "200": {
+              description: "API health status and database statistics"
+            }
+          }
+        }
+      }
+    }
+  };
+}
 
 const app = express();
 const router = express.Router();
 
-// ADD THIS LINE - Enable JSON body parsing for POST requests
+// Enable JSON body parsing for POST requests
 app.use(express.json());
 
 // Enable CORS for all routes
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   next();
 });
 
-// KEEP ALL YOUR EXISTING ARRAYS AND VARIABLES EXACTLY AS THEY ARE
+// Keep all your existing arrays and variables exactly as they are
 const news_array_ninenine = [];
 const news_array_onefootball = [];
 const news_array_espn = [];
@@ -48,13 +166,12 @@ const news_websites = [
   { title: "FourFourtwo" },
 ];
 
-// KEEP ALL YOUR EXISTING ENDPOINTS EXACTLY AS THEY ARE
+// Keep all your existing endpoints exactly as they are
 router.get("/news", (req, res) => {
   res.json(news_websites);
 });
 
 router.get("/news/90mins", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_ninenine.length = 0;
   
   axios
@@ -71,7 +188,6 @@ router.get("/news/90mins", (req, res) => {
       $("a", html).each(function () {
         const title = $(this).find("header").find("h3").text();
         const url = $(this).attr("href");
-        console.log(url, 8888888);
         const isValidUrl = validUrlPatterns.some((pattern) =>
           pattern.test(url)
         );
@@ -85,11 +201,13 @@ router.get("/news/90mins", (req, res) => {
 
       res.json(news_array_ninenine);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('90mins scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch 90mins news" });
+    });
 });
 
 router.get("/news/onefootball", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_onefootball.length = 0;
   
   axios
@@ -113,11 +231,13 @@ router.get("/news/onefootball", (req, res) => {
       });
       res.json(news_array_onefootball);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('OneFootball scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch OneFootball news" });
+    });
 });
 
 router.get("/news/espn", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_espn.length = 0;
   
   axios
@@ -141,11 +261,13 @@ router.get("/news/espn", (req, res) => {
       });
       res.json(news_array_espn);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('ESPN scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch ESPN news" });
+    });
 });
 
 router.get("/news/goal", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_goaldotcom.length = 0;
   
   axios
@@ -169,8 +291,6 @@ router.get("/news/goal", (req, res) => {
           ""
         );
 
-        console.log(title, "88888");
-
         if (url.includes("lists") && title !== "") {
           news_array_goaldotcom.push({
             url,
@@ -181,11 +301,13 @@ router.get("/news/goal", (req, res) => {
       });
       res.json(news_array_goaldotcom);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('Goal.com scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch Goal.com news" });
+    });
 });
 
 router.get("/news/fourfourtwo/epl", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_fourfourtwo_epl.length = 0;
   
   axios
@@ -214,11 +336,13 @@ router.get("/news/fourfourtwo/epl", (req, res) => {
 
       res.json(news_array_fourfourtwo_epl);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('FourFourTwo EPL scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch FourFourTwo EPL news" });
+    });
 });
 
 router.get("/news/fourfourtwo/laliga", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_fourfourtwo_laliga.length = 0;
   
   axios
@@ -248,11 +372,13 @@ router.get("/news/fourfourtwo/laliga", (req, res) => {
 
       res.json(news_array_fourfourtwo_laliga);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('FourFourTwo La Liga scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch FourFourTwo La Liga news" });
+    });
 });
 
 router.get("/news/fourfourtwo/ucl", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_fourfourtwo_ucl.length = 0;
   
   axios
@@ -285,11 +411,13 @@ router.get("/news/fourfourtwo/ucl", (req, res) => {
 
       res.json(news_array_fourfourtwo_ucl);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('FourFourTwo UCL scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch FourFourTwo UCL news" });
+    });
 });
 
 router.get("/news/fourfourtwo/bundesliga", (req, res) => {
-  // Clear array to avoid duplicates
   news_array_fourfourtwo_bundesliga.length = 0;
   
   axios
@@ -322,12 +450,15 @@ router.get("/news/fourfourtwo/bundesliga", (req, res) => {
 
       res.json(news_array_fourfourtwo_bundesliga);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.error('FourFourTwo Bundesliga scraping error:', err);
+      res.status(500).json({ error: "Failed to fetch FourFourTwo Bundesliga news" });
+    });
 });
 
-// ADD THESE NEW ENDPOINTS AFTER YOUR EXISTING ONES
+// NEW ENDPOINTS FOR MYSQL DATABASE
 
-// NEW: Scraping endpoint
+// Scraping endpoint - FIXED for MySQL
 router.post("/scrape/:source", async (req, res) => {
   const { source } = req.params;
   const { limit = 5 } = req.body;
@@ -379,7 +510,7 @@ router.post("/scrape/:source", async (req, res) => {
     // Process articles one by one to avoid overwhelming servers
     for (const article of articles) {
       try {
-        // Check if already exists in database
+        // Check if already exists in database (MySQL method)
         const existingArticle = await Article.findOne({ url: article.url });
         if (existingArticle) {
           scrapedArticles.push(existingArticle);
@@ -391,8 +522,8 @@ router.post("/scrape/:source", async (req, res) => {
         const scrapedContent = await scrapeArticleContent(article.url, source);
         
         if (scrapedContent) {
-          // Save to MongoDB
-          const newArticle = new Article({
+          // Save to MySQL (NOT MongoDB)
+          const articleData = {
             source: source,
             title: scrapedContent.title || article.title,
             url: article.url,
@@ -405,11 +536,11 @@ router.post("/scrape/:source", async (req, res) => {
                      source.includes('laliga') ? 'laliga' :
                      source.includes('ucl') ? 'ucl' :
                      source.includes('bundesliga') ? 'bundesliga' : 'general'
-          });
+          };
           
-          await newArticle.save();
-          scrapedArticles.push(newArticle);
-          console.log(`✅ Saved: ${newArticle.title.substring(0, 50)}...`);
+          const savedArticle = await Article.save(articleData);
+          scrapedArticles.push(savedArticle);
+          console.log(`✅ Saved: ${savedArticle.title.substring(0, 50)}...`);
         }
         
         // Add delay between requests to be respectful
@@ -433,7 +564,7 @@ router.post("/scrape/:source", async (req, res) => {
   }
 });
 
-// NEW: Get stored articles from MongoDB
+// Get stored articles from MySQL (NOT MongoDB)
 router.get("/articles", async (req, res) => {
   try {
     const { source, category, limit = 20, page = 1 } = req.query;
@@ -442,11 +573,13 @@ router.get("/articles", async (req, res) => {
     if (source) query.source = source;
     if (category) query.category = category;
     
+    // MySQL method (not MongoDB)
     const articles = await Article.find(query)
-      .sort({ scrapedAt: -1 })
+      .sort({ scraped_at: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
-      .select('-content'); // Exclude full content for list view
+      .select('-content')
+      .exec();
       
     const total = await Article.countDocuments(query);
     
@@ -465,7 +598,7 @@ router.get("/articles", async (req, res) => {
   }
 });
 
-// NEW: Get single article with full content
+// Get single article with full content
 router.get("/articles/:id", async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
@@ -478,17 +611,17 @@ router.get("/articles/:id", async (req, res) => {
   }
 });
 
-// NEW: Health check endpoint
+// Health check endpoint - FIXED for MySQL
 router.get("/health", async (req, res) => {
   try {
     const totalArticles = await Article.countDocuments();
     const recentArticles = await Article.countDocuments({
-      scrapedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+      scraped_at: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     });
     
     res.json({
       status: 'OK',
-      database: 'connected',
+      database: 'MySQL connected',
       totalArticles,
       articlesLast24h: recentArticles,
       timestamp: new Date().toISOString()
@@ -496,16 +629,19 @@ router.get("/health", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       status: 'Error',
+      database: 'MySQL connection failed',
       error: error.message,
       timestamp: new Date().toISOString()
     });
   }
 });
 
-// KEEP YOUR EXISTING SWAGGER SETUP - Use your updated swagger.json file
+// Swagger documentation setup
 router.use("/docs", swaggerUi.serve);
 router.get("/docs", swaggerUi.setup(swaggerDocument, {
-  explorer: true
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "Football TV API Documentation"
 }));
 
 app.use("/api", router);
