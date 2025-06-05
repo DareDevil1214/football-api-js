@@ -4,7 +4,7 @@ const axios = require("axios");
 const serverless = require("serverless-http");
 const swaggerUi = require("swagger-ui-express");
 
-const { connectDB, Article } = require('./database');
+const { connectDB, Article, pool } = require('./database');
 const { scrapeArticleContent } = require('./scraper');
 
 let swaggerDocument = {};
@@ -25,7 +25,7 @@ try {
 const app = express();
 const router = express.Router();
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -433,27 +433,52 @@ router.post("/scrape/:source", async (req, res) => {
 router.get("/articles", async (req, res) => {
   try {
     const { source, category, limit = 20, page = 1 } = req.query;
-    const query = {};
     
-    if (source) query.source = source;
-    if (category) query.category = category;
+    let query = 'SELECT * FROM articles WHERE 1=1';
+    const params = [];
     
-    const articles = await Article.find(query)
-      .sort({ scraped_at: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit))
-      .select('-content')
-      .exec();
-      
-    const total = await Article.countDocuments(query);
+    if (source) {
+      query += ' AND source = ?';
+      params.push(source);
+    }
+    
+    if (category) {
+      query += ' AND category = ?';
+      params.push(category);
+    }
+    
+    query += ' ORDER BY scraped_at DESC';
+    
+    const limitNum = parseInt(limit);
+    const skipNum = (parseInt(page) - 1) * limitNum;
+    
+    query += ` LIMIT ${limitNum} OFFSET ${skipNum}`;
+    
+    const [articles] = await pool.query(query, params);
+    
+    let countQuery = 'SELECT COUNT(*) as total FROM articles WHERE 1=1';
+    const countParams = [];
+    
+    if (source) {
+      countQuery += ' AND source = ?';
+      countParams.push(source);
+    }
+    
+    if (category) {
+      countQuery += ' AND category = ?';
+      countParams.push(category);
+    }
+    
+    const [countResult] = await pool.query(countQuery, countParams);
+    const total = countResult[0].total;
     
     res.json({
       articles,
       pagination: {
         page: parseInt(page),
-        limit: parseInt(limit),
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / parseInt(limit))
+        totalPages: Math.ceil(total / limitNum)
       }
     });
     

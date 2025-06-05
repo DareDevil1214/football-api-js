@@ -117,45 +117,6 @@ const Article = {
     }
   },
 
-  async find(criteria = {}) {
-    let query = 'SELECT * FROM articles WHERE 1=1';
-    const params = [];
-
-    if (criteria.source) {
-      query += ' AND source = ?';
-      params.push(criteria.source);
-    }
-
-    if (criteria.category) {
-      query += ' AND category = ?';
-      params.push(criteria.category);
-    }
-
-    if (criteria.is_active !== undefined) {
-      query += ' AND is_active = ?';
-      params.push(criteria.is_active);
-    }
-
-    return { 
-      sort: (sortCriteria) => ({
-        limit: (limitNum) => ({
-          skip: (skipNum) => ({
-            select: (selectFields) => ({
-              exec: async () => {
-                query += ' ORDER BY scraped_at DESC';
-                if (limitNum) query += ` LIMIT ${limitNum}`;
-                if (skipNum) query += ` OFFSET ${skipNum}`;
-                
-                const [rows] = await pool.query(query, params);
-                return rows;
-              }
-            })
-          })
-        })
-      })
-    };
-  },
-
   async countDocuments(criteria = {}) {
     try {
       let query = 'SELECT COUNT(*) as count FROM articles WHERE 1=1';
